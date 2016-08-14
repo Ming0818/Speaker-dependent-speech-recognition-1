@@ -49,6 +49,7 @@ def record(non_speaking_duration=0):
     # obtain audio from the microphone
     r = sr.Recognizer()
     r.non_speaking_duration = non_speaking_duration
+    r.pause_threshold += non_speaking_duration
 
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source)  # listen for 1 second to calibrate the
