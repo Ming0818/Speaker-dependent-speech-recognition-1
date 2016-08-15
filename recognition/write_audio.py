@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import librosa
 from utils import record
 
 
@@ -12,16 +13,14 @@ def main():
     name = args.name[0]
 
     while True:
-        audio = record()
+        y, sample_rate = record()
 
         i = 0
         while os.path.exists("../recordings/%s/%s.wav" % (name, i)):
             i += 1
         filename = "../recordings/%s/%s.wav" % (name, i)
 
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        with open(filename, "wb") as f:
-            f.write(audio.get_wav_data())
+        librosa.output.write_wav(filename, y, sample_rate)
 
         s = input("Press return to add another one, type 'q' to quit:")
         if s != "":
