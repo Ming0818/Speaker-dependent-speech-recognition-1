@@ -2,6 +2,7 @@ import argparse
 from itertools import groupby
 
 import librosa
+import matplotlib.pyplot as plt
 from utils import guess, record, save_audio, remove_silence
 
 
@@ -48,20 +49,25 @@ def multiple_mode(filename, args):
     if args.verbose:
         print("  (< threshold, length, offset) where length > %d" % int(args.repetitions_threshold))
         print(grouped_l)
-        #
-        # plt.figure()
-        # plt.subplot(4, 1, 1)
-        # plt.plot(y)
-        # plt.subplot(4, 1, 2)
-        # plt.plot(delta)
-        # plt.subplot(4, 1, 3)
-        # plt.plot(l)
-        # plt.subplot(4, 1, 4)
-        # plt.plot(y)
-        # for x in cutting_points:
-        #     plt.plot((x, x), (-.5, .5), 'r-')
-        #
-        # plt.show()
+
+        plt.figure()
+        fig = plt.subplot(4, 1, 1)
+        fig.set_title('Audio waveform', fontsize=14)
+        plt.plot(y)
+        fig = plt.subplot(4, 1, 2)
+        fig.set_title('Audio waveform delta', fontsize=14)
+        plt.plot(delta)
+        fig = plt.subplot(4, 1, 3)
+        fig.set_title('Delta > threshold', fontsize=14)
+        plt.plot(l)
+        fig = plt.subplot(4, 1, 4)
+        fig.set_title('Audio waveform with cutting points', fontsize=14)
+        plt.plot(y)
+        for x in cutting_points:
+            plt.plot((x, x), (-.3, .3), 'r-')
+
+        plt.gcf().set_tight_layout(True)
+        plt.show()
 
     for i in range(len(cutting_points) - 1):
         start = int(cutting_points[i] - cutting_points[i] % 16)
@@ -85,15 +91,19 @@ def main():
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_const',
                         const=True, default=False, help='Show detailed info')
     parser.add_argument('-l', '--last', dest='use_last', const=True, action='store_const',
-                        default=False, help='Use last recording instead of listening')
-    parser.add_argument('-d', '--delta', dest='delta_threshold', default=4,
+                        default=False, help='Use last mic recording instead of listening')
+    parser.add_argument('-d', '--delta', dest='delta_threshold', default=5,
                         help='Delta threshold used for cutting')
-    parser.add_argument('-r', '--repetitions', dest='repetitions_threshold', default=1800,
+    parser.add_argument('-r', '--repetitions', dest='repetitions_threshold', default=3000,
                         help='Repetitions threshold used for cutting')
+    parser.add_argument('-f', '--filename', dest='filename', default=None,
+                        help='Filename of the recording to use')
     args = parser.parse_args()
 
     filename = "../temp/buffer.wav"
-    if not args.use_last:
+    if args.filename is not None:
+        filename = args.filename
+    elif not args.use_last:
         filename = record()
 
     if args.s:

@@ -8,7 +8,7 @@ def cross_validate(num_tests, verbose):
     score = 0
 
     for test_name, test_mfcc in test_data:
-        d_min, name_min = guess(test_mfcc, train_data, verbose)
+        d_min, name_min = guess(test_mfcc, verbose)
         correct = test_name == name_min
 
         if correct:
@@ -27,8 +27,8 @@ def cross_validate(num_tests, verbose):
 
 def main():
     parser = argparse.ArgumentParser(description='Cross validate using training set.')
-    parser.add_argument('--verbose', '-v', dest='verbose', action='store_const',
-                        const=True, default=False, help='Show detailed info')
+    parser.add_argument('--verbose', '-v', dest='verbose', action='store_true',
+                        default=False, help='Show detailed info')
     parser.add_argument('num_tests', nargs=1, help='Number of recordings per word '
                                                    'to reserve for tests')
     args = parser.parse_args()

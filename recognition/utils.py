@@ -57,13 +57,17 @@ def guess(target_mfcc, verbose=False):
             d_min = d
             name_min = train_name
 
-    plt.figure()
-    for key, group in groupby(results, key=lambda x: x[0]):
-        y = [x[1] for x in group]
-        print(y, key)
-        plt.plot(y, label=key)
-    plt.legend()
-    plt.show()
+    if verbose:
+        plt.figure()
+        plt.title('Difference between current word and training example', fontsize=20)
+        plt.xlabel('Training example #', fontsize=16)
+        plt.ylabel('Error', fontsize=16)
+        for key, group in groupby(results, key=lambda x: x[0]):
+            y = [x[1] for x in group]
+            print(y, key)
+            plt.plot(y, 'o-', label=key)
+        plt.legend()
+        plt.show()
 
     return d_min, name_min
 
