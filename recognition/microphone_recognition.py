@@ -2,14 +2,12 @@ import argparse
 from itertools import groupby
 
 import librosa
-from utils import guess, get_train_test_data, record, trim
+from utils import guess, record, save_audio, remove_silence
 
 
 def train_and_guess(y, sample_rate, verbose):
     mfcc = librosa.feature.mfcc(y, sample_rate, n_mfcc=13)
-
-    train_data, _ = get_train_test_data()
-    _, best_guess = guess(mfcc.T, train_data, verbose)
+    _, best_guess = guess(mfcc.T, verbose)
     return best_guess
 
 
@@ -66,14 +64,18 @@ def multiple_mode(filename, args):
         # plt.show()
 
     for i in range(len(cutting_points) - 1):
-        start = cutting_points[i]
-        stop = cutting_points[i + 1]
+        start = int(cutting_points[i] - cutting_points[i] % 16)
+        stop = int(cutting_points[i + 1] - cutting_points[i + 1] % 16)
         y_interval = y[start:stop]
-        filename = "../temp/cut_%d.wav" % i
-        librosa.output.write_wav(filename, y_interval, sample_rate)
 
-        y_interval, sample_rate = trim(filename)
-        print(train_and_guess(y, sample_rate, args.verbose))
+        filename = "../temp/cut_%d.wav" % i
+        save_audio(y_interval, sample_rate, filename)
+
+        trimmed = filename.replace(".wav", ".trimmed.wav")
+        remove_silence(filename, trimmed)
+
+        y_interval, sample_rate = librosa.load(trimmed)
+        print(train_and_guess(y_interval, sample_rate, args.verbose))
 
 
 def main():
@@ -90,10 +92,9 @@ def main():
                         help='Repetitions threshold used for cutting')
     args = parser.parse_args()
 
-    filename = "../temp/spoken.wav"
+    filename = "../temp/buffer.wav"
     if not args.use_last:
-        y, sample_rate = record(0 if args.s else .5)
-        librosa.output.write_wav(filename, y, sample_rate)
+        filename = record()
 
     if args.s:
         y, sample_rate = librosa.load(filename)

@@ -1,13 +1,22 @@
 import os
+import subprocess
+from itertools import groupby
 from math import inf
 
 import librosa
+import matplotlib.pyplot as plt
 import speech_recognition as sr
 from dtw import dtw
 from numpy.dual import norm
 
+test_data = train_data = None
+
 
 def get_train_test_data(num_tests=0):
+    global train_data, test_data
+    if train_data is not None:
+        return train_data, test_data
+
     train_data = []
     test_data = []
 
@@ -31,43 +40,54 @@ def get_train_test_data(num_tests=0):
     return train_data, test_data
 
 
-def guess(target_mfcc, train_data, verbose=False):
+def guess(target_mfcc, verbose=False):
+    global train_data
+    if train_data is None:
+        get_train_test_data()
+
     d_min, name_min = inf, ""
+    results = []
     for train_name, train_mfcc in train_data:
         d, _, _, _ = dtw(target_mfcc, train_mfcc, dist=lambda x, y: norm(x - y, ord=1))
 
         if verbose:
-            print("  %s %f" % (train_name, d))
+            results.append((train_name, d))
 
         if d < d_min:
             d_min = d
             name_min = train_name
+
+    plt.figure()
+    for key, group in groupby(results, key=lambda x: x[0]):
+        y = [x[1] for x in group]
+        print(y, key)
+        plt.plot(y, label=key)
+    plt.legend()
+    plt.show()
+
     return d_min, name_min
 
 
-def record(non_speaking_duration=0):
-    with sr.Microphone() as source:
-        return process_source(source, non_speaking_duration)
+def record():
+    with sr.Microphone(sample_rate=22050) as source:
+        filename = process_source(source)
+        return filename
 
 
-def trim(filename):
-    y, sample_rate = librosa.load(filename, sr=None)
-    onsets = librosa.frames_to_time(librosa.onset.onset_detect(y, sample_rate), sample_rate)
-    offsets = librosa.frames_to_time(librosa.onset.onset_detect(y[::-1], sample_rate), sample_rate)  # Suboptimal!
-    leading_silence = onsets[0]
-    trailing_silence = offsets[0]
-    total_duration = librosa.get_duration(y, sample_rate)
-    y, sample_rate = librosa.load(filename, sample_rate, offset=leading_silence,
-                                  duration=total_duration - leading_silence - trailing_silence)
-    return y, sample_rate
+def remove_silence(input_path, output_path, block=True):
+    sox_args = ['sox', input_path, '-c', '1', output_path, 'silence', '1', '0.1', '0.1%', '-1', '0.1', '0.1%']
+    process_handle = subprocess.Popen(sox_args, stderr=subprocess.PIPE)
+    if block:
+        process_handle.communicate()
+    return output_path
 
 
-def process_source(source, non_speaking_duration):
+def process_source(source):
+    non_speaking_duration = 0.5
     r = sr.Recognizer()
     r.non_speaking_duration = non_speaking_duration
     r.pause_threshold += non_speaking_duration
-    r.adjust_for_ambient_noise(source)  # listen for 1 second to calibrate the
-    # ################################### energy threshold for ambient noise levels
+    r.adjust_for_ambient_noise(source)
 
     print("Listening...")
     audio = r.listen(source)
@@ -79,6 +99,9 @@ def process_source(source, non_speaking_duration):
         f.write(audio.get_wav_data())
     f.close()
 
-    y, sample_rate = librosa.load(filename)
+    return filename
 
-    return y, sample_rate
+
+def save_audio(y, sample_rate, filename):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    librosa.output.write_wav(filename, y, sample_rate)
