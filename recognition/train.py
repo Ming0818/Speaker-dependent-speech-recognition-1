@@ -1,8 +1,9 @@
-import argparse
+from __future__ import print_function
+
 import os
 from shutil import copyfile
 
-from utils import record, remove_silence
+from recognition.utils import record, remove_silence
 
 
 def load_examples():
@@ -13,8 +14,8 @@ def load_examples():
         for filename in files:
             if 'wav' not in filename:
                 continue
-            src = '../data/recordings/%s/%s' % (name, filename)
-            dst = '../recordings/%s/%s' % (name, filename)
+            src = './data/recordings/%s/%s' % (name, filename)
+            dst = './recordings/%s/%s' % (name, filename)
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             copyfile(src, dst)
 
@@ -24,9 +25,9 @@ def train(name):
         recording_path = record()
 
         i = 0
-        while os.path.exists("../recordings/%s/%s.wav" % (name, i)):
+        while os.path.exists("./recordings/%s/%s.wav" % (name, i)):
             i += 1
-        filename = "../recordings/%s/%s.wav" % (name, i)
+        filename = "./recordings/%s/%s.wav" % (name, i)
         os.makedirs(os.path.dirname(filename), exist_ok=True)
 
         remove_silence(recording_path, filename)
@@ -36,18 +37,15 @@ def train(name):
             break
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Record audio.')
+def init_parser(parser):
     parser.add_argument('-l', '--load-examples', dest='load_examples', action='store_true',
                         default=False, help='Load example training data')
-    parser.add_argument('-n', '--name', dest="name", help='Word that will be spoken')
-    args = parser.parse_args()
 
+    parser.add_argument('-n', '--name', dest="name", help='Word that will be spoken')
+
+
+def main(args):
     if args.load_examples:
         load_examples()
-    else:
+    elif args.name is not None:
         train(name=args.name)
-
-
-if __name__ == '__main__':
-    main()

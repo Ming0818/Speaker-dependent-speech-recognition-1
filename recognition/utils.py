@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import subprocess
 from itertools import groupby
@@ -9,18 +11,12 @@ import speech_recognition as sr
 from dtw import dtw
 from numpy.dual import norm
 
-test_data = train_data = None
-
 
 def get_train_test_data(num_tests=0):
-    global train_data, test_data
-    if train_data is not None:
-        return train_data, test_data
-
     train_data = []
     test_data = []
 
-    for subdir, dirs, files in os.walk("../recordings/"):
+    for subdir, dirs, files in os.walk("./recordings/"):
         if subdir[-1] == "/":
             continue
 
@@ -30,7 +26,7 @@ def get_train_test_data(num_tests=0):
         for filename in files:
             if 'wav' not in filename:
                 continue
-            y, sample_rate = librosa.load('../recordings/%s/%s' % (name, filename))
+            y, sample_rate = librosa.load('./recordings/%s/%s' % (name, filename))
             mfcc = librosa.feature.mfcc(y, sample_rate, n_mfcc=13)
             if curr_tests < num_tests:
                 test_data.append((name, mfcc.T))
@@ -41,10 +37,7 @@ def get_train_test_data(num_tests=0):
 
 
 def guess(target_mfcc, verbose=False):
-    global train_data
-    if train_data is None:
-        get_train_test_data()
-
+    train_data, _ = get_train_test_data()
     d_min, name_min = inf, ""
     results = []
     for train_name, train_mfcc in train_data:
@@ -97,7 +90,7 @@ def process_source(source):
     audio = r.listen(source)
     print("Done.")
 
-    filename = "../temp/buffer.wav"
+    filename = "./temp/buffer.wav"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "wb") as f:
         f.write(audio.get_wav_data())

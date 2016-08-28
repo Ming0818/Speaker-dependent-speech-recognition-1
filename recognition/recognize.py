@@ -1,9 +1,11 @@
-import argparse
+from __future__ import print_function
+
 from itertools import groupby
 
 import librosa
 import matplotlib.pyplot as plt
-from utils import guess, record, save_audio, remove_silence
+
+from recognition.utils import guess, record, save_audio, remove_silence
 
 
 def train_and_guess(y, sample_rate, verbose):
@@ -74,7 +76,7 @@ def multiple_mode(filename, args):
         stop = int(cutting_points[i + 1] - cutting_points[i + 1] % 16)
         y_interval = y[start:stop]
 
-        filename = "../temp/cut_%d.wav" % i
+        filename = "./temp/cut_%d.wav" % i
         save_audio(y_interval, sample_rate, filename)
 
         trimmed = filename.replace(".wav", ".trimmed.wav")
@@ -84,8 +86,7 @@ def multiple_mode(filename, args):
         print(train_and_guess(y_interval, sample_rate, args.verbose))
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Cross validate.')
+def init_parser(parser):
     parser.add_argument('-s', '--single', dest='s', action='store_const',
                         const=True, default=False, help='Single word mode')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_const',
@@ -98,11 +99,13 @@ def main():
                         help='Repetitions threshold used for cutting')
     parser.add_argument('-f', '--filename', dest='filename', default=None,
                         help='Filename of the recording to use')
-    args = parser.parse_args()
 
-    filename = "../temp/buffer.wav"
+
+def main(args):
+    filename = "./temp/buffer.wav"
     if args.filename is not None:
         filename = args.filename
+        print("Using: %s" % filename)
     elif not args.use_last:
         filename = record()
 
@@ -111,7 +114,3 @@ def main():
         print(train_and_guess(y, sample_rate, args.verbose))
     else:
         multiple_mode(filename, args)
-
-
-if __name__ == '__main__':
-    main()

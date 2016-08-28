@@ -1,9 +1,9 @@
-import argparse
+from __future__ import print_function
 
-from utils import get_train_test_data, guess
+from recognition.utils import get_train_test_data, guess
 
 
-def cross_validate(num_tests, verbose):
+def cross_validate(num_tests, verbose=False):
     train_data, test_data = get_train_test_data(num_tests)
     score = 0
 
@@ -25,18 +25,15 @@ def cross_validate(num_tests, verbose):
     return score / len(test_data)
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Cross validate using training set.')
+def init_parser(parser):
     parser.add_argument('--verbose', '-v', dest='verbose', action='store_true',
                         default=False, help='Show detailed info')
     parser.add_argument('num_tests', nargs=1, help='Number of recordings per word '
                                                    'to reserve for tests')
-    args = parser.parse_args()
+
+
+def main(args):
     num_tests = int(args.num_tests[0])
     score = cross_validate(num_tests, args.verbose) * 100
 
     print('Recognition rate %.2f%%' % score)
-
-
-if __name__ == '__main__':
-    main()
